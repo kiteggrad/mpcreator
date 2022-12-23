@@ -18,6 +18,12 @@ func (a *App) FillMainProject(
 	includeProjects, excludeProjects,
 	includeLanguages, excludeLanguages []string,
 ) (err error) {
+	a.log.With(
+		"includeGroups", includeGroups, "excludeGroups", excludeGroups,
+		"includeProjects", includeProjects, "excludeProjects", excludeProjects,
+		"includeLanguages", includeLanguages, "excludeLanguages", excludeLanguages,
+	).Info("FillMainProject")
+
 	mainProjectRepo, err := a.initMainProject()
 	if err != nil {
 		return errors.Wrap(err, "failed to initMainProject")
@@ -98,7 +104,7 @@ func (a *App) iterateGroupsProjects(
 	groupCallback func(group *gitlab.Group) (err error),
 	projectCallback func(project *gitlab.Project) (err error),
 	includeGroups, excludeGroups,
-	includProjects, excludeProjects,
+	includeProjects, excludeProjects,
 	includeLanguages, excludeLanguages []string,
 ) (err error) {
 	err = a.iterateGroups(func(group *gitlab.Group) (err error) {
@@ -111,7 +117,7 @@ func (a *App) iterateGroupsProjects(
 		if projectCallback != nil {
 			err = a.iterateGroupProjects(
 				group, projectCallback,
-				includProjects, excludeProjects,
+				includeProjects, excludeProjects,
 				includeLanguages, excludeLanguages,
 			)
 			if err != nil {

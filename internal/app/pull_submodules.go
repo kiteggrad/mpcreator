@@ -9,7 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *App) PullMainProjectSubmodules(includeGroups, excludeGroups, includProjects, excludeProjects []string) (err error) {
+func (a *App) PullMainProjectSubmodules(includeGroups, excludeGroups, includeProjects, excludeProjects []string) (err error) {
+	a.log.With(
+		"includeGroups", includeGroups, "excludeGroups", excludeGroups,
+		"includeProjects", includeProjects, "excludeProjects", excludeProjects,
+	).Info("PullMainProjectSubmodules")
+
 	mainProjectRepo, err := a.openMainProject()
 	if err != nil {
 		return errors.Wrap(err, "failed to openMainProject")

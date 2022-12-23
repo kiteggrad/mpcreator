@@ -4,8 +4,6 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"log"
-
 	"github.com/kiteggrad/mpcreator/internal/app"
 	"go.uber.org/zap"
 
@@ -52,8 +50,6 @@ var mpfillCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "failed to get exlang flag")
 		}
-		log.Printf("includeGroups: %#+v\n", includeGroups)
-		log.Printf("excludeGroups: %#+v\n", excludeGroups)
 
 		gitlabClient, err := gitlab.NewClient(gitlabToken, gitlab.WithBaseURL(gitlabURL))
 		if err != nil {
