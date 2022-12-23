@@ -89,6 +89,7 @@ func initLogger(level string) *zap.Logger {
 
 	zapCfg := zap.NewDevelopmentConfig()
 	zapCfg.Development = false // do not show trace for warn level
+	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
 	if level != "" {
 		zapCfg.Level, err = zap.ParseAtomicLevel(level)
