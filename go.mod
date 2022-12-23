@@ -11,6 +11,7 @@ require (
 	github.com/xanzy/go-gitlab v0.77.0
 	go.uber.org/goleak v1.2.0
 	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 	golang.org/x/sync v0.1.0
 )
 

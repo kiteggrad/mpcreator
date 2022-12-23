@@ -7,6 +7,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 func (a *App) PullMainProjectSubmodules(includeGroups, excludeGroups, includeProjects, excludeProjects []string) (err error) {
@@ -29,9 +30,40 @@ func (a *App) PullMainProjectSubmodules(includeGroups, excludeGroups, includePro
 	}
 
 	for _, submodule := range submodules {
+		submoduleFullName := submodule.Config().Name
+		submoduleGroupName := strings.Split(submoduleFullName, "/")[0]
+		submoduleProjectName := strings.Split(submoduleFullName, "/")[1]
+
+		if len(includeGroups) != 0 { // TODO move to func
+			if !slices.Contains(includeGroups, submoduleGroupName) {
+				continue
+			}
+		}
+		if len(excludeGroups) != 0 {
+			if slices.Contains(excludeGroups, submoduleGroupName) {
+				continue
+			}
+		}
+
+		if len(includeProjects) != 0 {
+			if !slices.Contains(includeProjects, submoduleProjectName) {
+				continue
+			}
+		}
+		if len(excludeProjects) != 0 {
+			if slices.Contains(excludeProjects, submoduleProjectName) {
+				continue
+			}
+		}
+
 		err = a.pullSubmodule(submodule, a.log)
 		if err != nil {
-			return errors.Wrap(err, "failed to pullSubmodule")
+			a.log.With(
+				"submodule", submodule.Config().Path,
+				"error", err.Error(),
+			).Error("failed to pullSubmodule")
+
+			continue
 		}
 	}
 
@@ -43,20 +75,21 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 	log = log.With("submodule", submodule.Config().Name)
 	log.Debug("pulling submodule...")
 
-	submoduleRepo, err := submodule.Repository()
+	// not submodule.Repository() because it randomly throws error
+	submoduleRepo, err := git.PlainOpen(a.getSubmodulePath(submodule))
 	if err != nil {
 		return errors.Wrap(err, "failed to submodule.Repository")
 	}
 
 	submoduleCurrentBranch, err := a.getSubmoduleCurrentBranch(submodule)
 	if err != nil {
-		return errors.Wrap(err, "failed to submodule.Head")
+		return errors.Wrap(err, "failed to getSubmoduleCurrentBranch")
 	}
 	// submoduleTrackingBranch gets from .git/config, not from .gitmodules - need to git sync/update or something like that?
 	submoduleTrackingBranch := submodule.Config().Branch
 	submoduleDefaultBranch, err := getRepoDefaultBranchName(submoduleRepo)
 	if err != nil {
-		return errors.Wrap(err, "failed to submodule.Head")
+		return errors.Wrap(err, "failed to getRepoDefaultBranchName")
 	}
 
 	log = log.With(
@@ -77,7 +110,7 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 		case nil:
 			log.Info("pulled new changes")
 		default:
-			return errors.Wrap(err, "failed to submoduleRepo.Worktree")
+			return errors.Wrap(err, "failed to submoduleWorktree.Pull")
 		}
 
 		return nil
@@ -88,7 +121,9 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 		return errors.New("missing submoduleCurrentBranch")
 
 	case submoduleTrackingBranch == "" && submoduleDefaultBranch == "":
-		return errors.New("submoduleTrackingBranch and submoduleDefaultBranch are empty")
+		return errors.New("submoduleTrackingBranch and submoduleDefaultBranch are empty" +
+			". You can try to fix it by 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/YOUR_DEFAULT_BRANCH'",
+		)
 
 	case submoduleTrackingBranch != "": // pull from submoduleTrackingBranch
 		if submoduleTrackingBranch != submoduleCurrentBranch {
@@ -120,7 +155,8 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 }
 
 func (a *App) getSubmoduleCurrentBranch(submodule *git.Submodule) (submoduleCurrentBranch string, err error) {
-	submoduleRepo, err := submodule.Repository()
+	// not submodule.Repository() because it randomly throws error
+	submoduleRepo, err := git.PlainOpen(a.getSubmodulePath(submodule))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to submodule.Repository")
 	}
