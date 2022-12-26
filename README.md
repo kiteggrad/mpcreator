@@ -60,17 +60,24 @@
 ## TODO
 - (?) Флаг для извлечения только реп к которым есть определённый уровень доступа
 - autocomplete
+- исправить ошибку reference has changed concurrently
 
----
-<details>
-    <summary>Drafts</summary>
-На написанное ниже можно не обращать внимание, просто черновики
+## Полезные git команды
+- вливает отслеживаемую ветку (по умолчанию master?), даже если сейчас не на ней.
+  (Рекомендуется к прочтению https://git-scm.com/book/ru/v2/Инструменты-Git-Подмодули)
+  ```bash
+  git submodule update --init --recursive --remote --merge
+  ```
+- подтягивает изменения только если сабмодуль на отслеживаемой ветке, не валится если произошла ошибка в одном из сабмодулей
+  ```bash
+  git submodule foreach "git pull origin --recurse-submodules --ff-only || true"
+  ```
 
-Рекомендуется к прочтению https://git-scm.com/book/ru/v2/Инструменты-Git-Подмодули
-
-Команды для обновления сабмодулей:
-- вливает отслеживаемую ветку (по умолчанию master), даже если сейчас не на ней.
-`git submodule update --init --recursive --remote --merge`
-- подтягивает изменения только если сабмодуль на отслеживаемой ветке, не валится если произошла ошибка в одном из сабмодулей.
-`git submodule foreach "git pull origin --recurse-submodules --ff-only || true"`
-</details>
+- установить отслеживаемую ветку для ветки
+  ```bash
+  git branch --set-upstream-to=origin/master master
+  ```
+- создать символическую ссылку origin/HEAD. Она Бывает отсутствует, из-за этого возникают ошибки при попытке получить дефолтную ветку
+  ```bash
+  git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/YOUR_DEFAULT_BRANCH
+  ```
