@@ -107,6 +107,9 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 		err = submoduleWorktree.Pull(&git.PullOptions{RemoteName: "origin"})
 		switch err {
 		case git.NoErrAlreadyUpToDate:
+		case git.ErrUnstagedChanges:
+			log.Warn("contains unstaged changes, skipping...")
+			return nil
 		case nil:
 			log.Info("pulled new changes")
 		default:
@@ -127,7 +130,7 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 
 	case submoduleTrackingBranch != "": // pull from submoduleTrackingBranch
 		if submoduleTrackingBranch != submoduleCurrentBranch {
-			log.Warn("submoduleTrackingBranch != submoduleCurrentBranch, skipping")
+			log.Warn("submoduleTrackingBranch != submoduleCurrentBranch, skipping...")
 			return nil
 		}
 
@@ -138,7 +141,7 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 
 	case submoduleDefaultBranch != "": // pull from submoduleDefaultBranch
 		if submoduleDefaultBranch != submoduleCurrentBranch {
-			log.Warn("submoduleDefaultBranch != submoduleCurrentBranch, skipping")
+			log.Warn("submoduleDefaultBranch != submoduleCurrentBranch, skipping...")
 			return nil
 		}
 
