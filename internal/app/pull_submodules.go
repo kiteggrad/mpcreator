@@ -98,25 +98,31 @@ func (a *App) pullSubmodule(submodule *git.Submodule, log *zap.SugaredLogger) (e
 		"submoduleDefaultBranch", submoduleDefaultBranch,
 	)
 
-	pull := func() error {
+	pull := func() (err error) {
 		submoduleWorktree, err := submoduleRepo.Worktree()
 		if err != nil {
 			return errors.Wrap(err, "failed to submoduleRepo.Worktree")
 		}
 
-		err = submoduleWorktree.Pull(&git.PullOptions{RemoteName: "origin"})
-		switch err {
-		case git.NoErrAlreadyUpToDate:
-		case git.ErrUnstagedChanges:
-			log.Warn("contains unstaged changes, skipping...")
-			return nil
-		case nil:
-			log.Info("pulled new changes")
-		default:
-			return errors.Wrap(err, "failed to submoduleWorktree.Pull")
+		const triesCount = 3
+		for i := 0; i < triesCount; i++ {
+			// randomly returns storage.ErrReferenceHasChanged
+			err = submoduleWorktree.Pull(&git.PullOptions{RemoteName: "origin"})
+			switch err {
+			case git.NoErrAlreadyUpToDate:
+				return nil
+			case git.ErrUnstagedChanges:
+				log.Warn("contains unstaged changes, skipping...")
+				return nil
+			case nil:
+				log.Info("pulled new changes")
+				return nil
+			default:
+				err = errors.Wrap(err, "failed to submoduleWorktree.Pull")
+			}
 		}
 
-		return nil
+		return err
 	}
 
 	switch {
